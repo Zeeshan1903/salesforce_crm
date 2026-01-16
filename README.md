@@ -13,6 +13,18 @@ This project does **not** use Salesforce APIs and works entirely on the client s
 
 ---
 
+
+## 🛠️ How to Install the Extension in Chrome
+
+Follow these steps carefully:
+
+1. Clone or download this repository:
+2. Open Google Chrome and go to: `chrome://extensions`
+3. Enable Developer mode (top-right corner)
+4. Click Load unpacked
+5. Select the project folder (the folder containing `manifest.json`)
+6. The extension will now appear in your extensions list
+
 ## 📖 Project Overview
 
 Salesforce CRM Data Extractor is a Chrome extension developed to extract useful CRM data such as:
@@ -66,16 +78,6 @@ The extracted data is stored locally in the browser and can be viewed anytime us
 
 ---
 
-## 🛠️ How to Install the Extension in Chrome
-
-Follow these steps carefully:
-
-1. Clone or download this repository:
-2. Open Google Chrome and go to: `chrome://extensions`
-3. Enable Developer mode (top-right corner)
-4. Click Load unpacked
-5. Select the project folder (the folder containing `manifest.json`)
-6. The extension will now appear in your extensions list
 
 ## How to Use
 1. Log in to Salesforce
