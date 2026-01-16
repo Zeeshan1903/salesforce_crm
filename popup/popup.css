@@ -17,3 +17,11 @@ pre {
   overflow: auto;
   font-size: 11px;
 }
+body { font-family: Arial; width: 350px; }
+button { margin: 3px; }
+.card {
+  border: 1px solid #ccc;
+  padding: 5px;
+  margin-bottom: 5px;
+  font-size: 11px;
+}

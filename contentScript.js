@@ -1,8 +1,6 @@
-
-
 console.log("CONTENT SCRIPT LOADED");
 
-// ------------------- STATUS POPUP (shadow dom) -------------------
+// =================== SHADOW DOM STATUS ===================
 
 function showStatus(text) {
   let host = document.createElement("div");
@@ -26,14 +24,13 @@ function showStatus(text) {
   `;
 
   document.body.appendChild(host);
-
   setTimeout(() => host.remove(), 2500);
 }
 
-// ------------------- OBJECT DETECTION -------------------
+// =================== OBJECT DETECTION ===================
 
 function detectObjectType() {
-  let url = window.location.href.toLowerCase();
+  let url = location.href.toLowerCase();
 
   if (url.includes("/lightning/r/lead/")) return "leads";
   if (url.includes("/lightning/r/contact/")) return "contacts";
@@ -44,7 +41,7 @@ function detectObjectType() {
   return null;
 }
 
-// ------------------- STORAGE -------------------
+// =================== STORAGE ===================
 
 function saveRecords(type, records) {
   chrome.storage.local.get(["salesforce_data"], (res) => {
@@ -68,26 +65,83 @@ function saveRecords(type, records) {
   });
 }
 
-// ------------------- EXTRACTION -------------------
+// =================== FIELD BY LABEL (KEY PART) ===================
 
-function extractBasicRecord(type) {
-  let title = document.querySelector("h1")?.innerText || "No title";
+function getFieldValue(labelText) {
+  let spans = [...document.querySelectorAll("span")];
+  let label = spans.find(s => s.innerText.trim() === labelText);
+  if (!label) return null;
 
+  let container = label.closest("records-record-layout-item");
+  if (!container) return null;
+
+  let valueEl = container.querySelector(
+    "lightning-formatted-text, lightning-formatted-number, a"
+  );
+
+  return valueEl ? valueEl.innerText.trim() : null;
+}
+
+// =================== EXTRACTION PER OBJECT ===================
+
+function extractAccount() {
   return [{
-    id: "id_" + Math.random().toString(36).slice(2),
-    name: title,
-    type: type,
-    extractedAt: new Date().toISOString()
+    id: location.href,
+    name: getFieldValue("Account Name"),
+    website: getFieldValue("Website"),
+    phone: getFieldValue("Phone"),
+    industry: getFieldValue("Industry"),
+    type: getFieldValue("Type"),
+    owner: getFieldValue("Account Owner"),
+    revenue: getFieldValue("Annual Revenue")
   }];
 }
 
-// ------------------- MESSAGE LISTENER -------------------
+function extractLead() {
+  return [{
+    id: location.href,
+    name: getFieldValue("Name"),
+    company: getFieldValue("Company"),
+    email: getFieldValue("Email"),
+    phone: getFieldValue("Phone"),
+    source: getFieldValue("Lead Source"),
+    status: getFieldValue("Lead Status"),
+    owner: getFieldValue("Lead Owner")
+  }];
+}
+
+function extractOpportunity() {
+  return [{
+    id: location.href,
+    name: getFieldValue("Opportunity Name"),
+    amount: getFieldValue("Amount"),
+    stage: getFieldValue("Stage"),
+    probability: getFieldValue("Probability (%)"),
+    closeDate: getFieldValue("Close Date"),
+    forecast: getFieldValue("Forecast Category"),
+    owner: getFieldValue("Opportunity Owner"),
+    account: getFieldValue("Account Name")
+  }];
+}
+
+function extractTask() {
+  return [{
+    id: location.href,
+    subject: getFieldValue("Subject"),
+    due: getFieldValue("Due Date"),
+    status: getFieldValue("Status"),
+    priority: getFieldValue("Priority"),
+    relatedTo: getFieldValue("Related To"),
+    assignee: getFieldValue("Assigned To")
+  }];
+}
+
+// =================== MESSAGE LISTENER ===================
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type !== "START_EXTRACTION") return;
 
   let objType = detectObjectType();
-
   if (!objType) {
     showStatus("Not on record page");
     return;
@@ -95,8 +149,17 @@ chrome.runtime.onMessage.addListener((msg) => {
 
   showStatus("Extracting " + objType);
 
-  let records = extractBasicRecord(objType);
-  saveRecords(objType, records);
+  let records = [];
+  if (objType === "accounts") records = extractAccount();
+  if (objType === "leads") records = extractLead();
+  if (objType === "opportunities") records = extractOpportunity();
+  if (objType === "tasks") records = extractTask();
 
+  if (!records.length) {
+    showStatus("Nothing extracted");
+    return;
+  }
+
+  saveRecords(objType, records);
   showStatus("Done extracting " + objType);
 });
